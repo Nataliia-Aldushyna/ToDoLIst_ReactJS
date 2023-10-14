@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoList React</title>
+    <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+        }
+      </style>
+</head>
+<body>
+    <h1>To-Do-Liste</h1>
+    <div id="toDoListApp"></div>
+</body>
+
+<script src="https://unpkg.com/react@17.0.2/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js" crossorigin></script>
+
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<script type="text/babel">
+
+const itemStyle = {
+      backgroundColor: 'lightblue',
+      margin: 8,
+      padding: 8,
+    }
+
+    const circleStyle = {
+      display: "inline-block",
+      borderStyle: "solid",
+      borderWidth: 2,
+      borderColor: "black",
+      width: 16,
+      height: 16,
+      marginRight: 8,
+      borderRadius: 12,
+      verticalAlign: "top",
+    }
+
+    const circleStyleChecked = {
+      borderColor: "gray",
+      color: "gray"
+    }
+
+    const titleStyle = {
+      display: "inline-block",
+      lineHeight: "16px",
+    }
+
+    const titleStyleChecked = {
+      color: "gray",
+    }
+
+    const buttonsStyle = {
+      display: "inline-block",
+      float: "right"
+    }
+
+    class TaskItem extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          task: props.task
+        }
+      }
+
+      markAsDone = () => {
+        this.state.task.done = true
+        this.setState({
+          task: this.state.task
+        }, () => {
+          this.props.onMarkAsDone()
+        })
+      }
+
+      render() {
+        return <div style={itemStyle}>
+          <div
+            style={{ ...circleStyle, ... (this.state.task.done ? circleStyleChecked : {}) }}
+            onClick={this.markAsDone}
+            >
+            { this.state.task.done ? <span>✔︎</span> : null }
+          </div>
+          <div style={{ ...titleStyle, ... (this.state.task.done ? titleStyleChecked : {})}}>{this.state.task.title}</div>
+          <div style={buttonsStyle}>
+            {
+              !this.state.task.done ?
+                <button onClick={this.props.onUpdate}>update</button>
+                : null
+            }
+            <button onClick={this.props.onDelete}>löschen</button>
+          </div>
+        </div>
+      }
+    }
+
+
+
+
+    class ToDoList extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = {
+          newTitle: "",
+          tasks: /*[
+            { title: 'Eintrag 1', done: false},
+            { title: 'Eintrag 2', done: false},
+            { title: 'Eintrag 3', done: false},
+            { title: 'Eintrag 4', done: false},
+          ]*/
+            this.loadList()
+        }
+      }
+
+      addItem = () => {
+        this.state.tasks.push({
+          title: this.state.newTitle, done: false
+        })
+        this.setState({
+          tasks: this.state.tasks,
+          newTitle: ""
+        }, () => {
+          this.storeList()
+        })
+      }
+
+      deleteItem = (task) => {
+        this.setState({
+          tasks: this.state.tasks.filter( t => t != task)
+        }, () => {
+          this.storeList()
+        })
+      }
+
+      updateItem = (task) => {
+        var updatedTitle = prompt("Wie soll der Eintrag ab sofort heißen?", task.title)
+        if (updatedTitle != null) {
+          task.title = updatedTitle;
+          this.setState({
+            tasks: this.state.tasks
+          }, () => {
+            this.storeList()
+          })
+        }
+      }
+
+      onMarkAsDone = (task) => {
+        this.storeList()
+      }
+
+      storeList = () => {
+        localStorage.setItem("to-do-list-react", JSON.stringify(this.state.tasks))
+      }
+
+      loadList = () => {
+        var stored = localStorage.getItem("to-do-list-react")
+        if (stored) {
+          return JSON.parse(stored)
+        } else {
+          return []
+        }
+      }
+
+      checkEnterKey = (event) => {
+        if (event.key === 'Enter') {
+          this.addItem()
+        }
+      }
+
+      render() {
+        var i = 0;
+        const taskItems = this.state.tasks.map((task) => {
+          return <TaskItem key={task.title+"_"+(i++)} task={task}
+            onDelete={() => this.deleteItem(task)}
+            onUpdate={() => this.updateItem(task)}
+            onMarkAsDone={() => this.onMarkAsDone(task)}
+          />
+        })
+        return <div>
+          {taskItems}
+          <input
+            value={this.state.newTitle}
+            onChange={e => this.setState({newTitle: e.target.value})}
+            onKeyPress={this.checkEnterKey}
+            placeholder="Neuer Eintrag"/>
+
+          <button
+            onClick={this.addItem}
+            disabled={this.state.newTitle.trim() == ""}>
+          Hinzufügen
+          </button>
+        </div>
+      }
+    }
+
+    ReactDOM.render(
+        <ToDoList text="Hallo 4"/>,
+        document.getElementById('toDoListApp')
+        )
+
+</script>
+</html>
